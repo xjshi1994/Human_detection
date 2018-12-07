@@ -1,0 +1,33 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf100
+{\fonttbl\f0\fswiss\fcharset0 ArialMT;\f1\fswiss\fcharset0 Arial-BoldMT;\f2\fswiss\fcharset0 Arial-ItalicMT;
+}
+{\colortbl;\red255\green255\blue255;\red38\green38\blue38;\red255\green255\blue255;\red42\green105\blue162;
+}
+{\*\expandedcolortbl;;\cssrgb\c20000\c20000\c20000;\cssrgb\c100000\c100000\c100000;\cssrgb\c20392\c49412\c69804;
+}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sl320\sa200\partightenfactor0
+
+\f0\fs28 \cf2 \cb3 \expnd0\expndtw0\kerning0
+There are 20 training images (10 positive and 10 negative) and 10 test images (5 positive and 5 negative) in .bmp format.\'a0\'a0All images are of size 160 (Height) X 96 (Width). Using the parameters specified in the project description, you should have 20 X 12 cells and 19 X 11 blocks. The size of your final HOG descriptor should be 7,524 X 1.\
+You can download the training and test images from:\'a0\
+\pard\pardeftab720\sl320\sa200\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "https://drive.google.com/drive/folders/1Jhexni_St_bn_NVz8TJT1P0gOKoRflQ4?usp=sharing"}}{\fldrslt \cf4 \ul \ulc4 https://drive.google.com/drive/folders/1Jhexni_St_bn_NVz8TJT1P0gOKoRflQ4?usp=sharing}}\
+\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sl320\partightenfactor0
+\ls1\ilvl0\cf2 \cb3 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 When training the neural network, you can stop when the weights do not change much between succesive epochs (or iterations) through the training set. When the weights do not change, the network outputs and hence the squared errors do not change. You can compute the\'a0
+\f1\b mean squared error
+\f0\b0 \'a0as the\'a0
+\f2\i average of the\'a0squared errors over all 20 training samples\'a0
+\f0\i0 and use it as the measure to decide when to stop training (i.e., when the mean squared error does not change much between successive epochs, you can stop).\'a0\'a0Squared error for\'a0a traning sample is computed as E =\'a0\cb1 \cb3 (y - h
+\fs21 w
+\fs28 (x))
+\fs21 2
+\fs28 \'a0where y is the label and h
+\fs21 w
+\fs28 (x) is the network output.\'a0\cb1 \
+}
