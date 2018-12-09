@@ -198,7 +198,7 @@ def get_trainning_set():
         sub_train_set.append(train_pos_des)
         print("--{0:d}--".format(count_p))
         print("mean:{0:f}, std_dev{1:f}, path:{2:s}".format(np.mean(np.array(train_pos_des)), np.std(np.array(train_pos_des)), path))
-        sub_train_set.append([0.9])
+        sub_train_set.append([1])
         train_sets.append(sub_train_set)
         count_p += 1
         
@@ -207,16 +207,41 @@ def get_trainning_set():
         sub_train_set = []
         train_neg_des = get_descriptor(path)
         print("--{0:d}--".format(count_p))
-        print("mean:{0:f}, std_dev{1:f}, path:{2:s}".format(np.mean(np.array(train_neg_des)), np.std(np.array(train_neg_des)),path))
+        print(path,"mean:{0:f}, std_dev{1:f}, path:{2:s}".format(np.mean(np.array(train_neg_des)), np.std(np.array(train_neg_des)),path))
         sub_train_set.append(train_neg_des)
-        sub_train_set.append([0.1])
+        sub_train_set.append([0])
         train_sets.append(sub_train_set)
         count_p += 1
         
     return train_sets
 
+def get_test_set():
+    positive_img_path = gb.glob("train_data/test_positive/*.bmp")
+    test_sets = []
+    count_p = 0
+    for path in positive_img_path:
+        sub_train_set = []
+        train_pos_des = get_descriptor(path)
+        sub_train_set.append(train_pos_des)
+        print("--{0:d}--".format(count_p))
+        print("mean:{0:f}, std_dev{1:f}, path:{2:s}".format(np.mean(np.array(train_pos_des)), np.std(np.array(train_pos_des)), path))
+        sub_train_set.append([1])
+        test_sets.append(sub_train_set)
+        count_p += 1
+        
+    negative_img_path = gb.glob("train_data/test_negative/*.bmp")
+    for path in negative_img_path:
+        sub_train_set = []
+        train_neg_des = get_descriptor(path)
+        print("--{0:d}--".format(count_p))
+        print("mean:{0:f}, std_dev{1:f}, path:{2:s}".format(np.mean(np.array(train_neg_des)), np.std(np.array(train_neg_des)),path))
+        sub_train_set.append(train_neg_des)
+        sub_train_set.append([0])
+        test_sets.append(sub_train_set)
+        count_p += 1
+    return test_sets
 # neural network
-
+# # nn: 50 learning rate: 0.1 output weight: 0.1
 
 #
 # Shorthand:
@@ -249,13 +274,12 @@ method:
     train(self, training_inputs, training_outputs)
 """
 class NeuralNetwork:
-    LEARNING_RATE = 0.5
-
-    def __init__(self, num_inputs, num_hidden, num_outputs, hidden_layer_weights = None, output_layer_weights = None):
+    LEARNING_RATE = 0.1
+    def __init__(self, num_inputs, num_hidden, num_outputs, hidden_layer_weights = None, output_layer_weights = None,  hidden_layer_bias=None, output_layer_bias=None):
         self.num_inputs = num_inputs
-
-        self.hidden_layer = NeuronLayer(num_hidden, 0)
-        self.output_layer = NeuronLayer(num_outputs, 1)
+        self.num_hidden = num_hidden
+        self.hidden_layer = NeuronLayer(num_hidden, 0,hidden_layer_bias)
+        self.output_layer = NeuronLayer(num_outputs, 1,output_layer_bias)
 
         self.init_weights_from_inputs_to_hidden_layer_neurons(hidden_layer_weights)
         self.init_weights_from_hidden_layer_neurons_to_output_layer_neurons(output_layer_weights)
@@ -275,7 +299,7 @@ class NeuralNetwork:
         for o in range(len(self.output_layer.neurons)):
             for h in range(len(self.hidden_layer.neurons)):
                 if not output_layer_weights:
-                    self.output_layer.neurons[o].weights.append(0.01 * random.random()*random.randint(-1,1))
+                    self.output_layer.neurons[o].weights.append(0.1 * random.random()*random.randint(-1,1))
                 else:
                     self.output_layer.neurons[o].weights.append(output_layer_weights[weight_num])
                 weight_num += 1
@@ -295,9 +319,7 @@ class NeuralNetwork:
         return self.output_layer.feed_forward(hidden_layer_outputs)
 
     # Uses online learning, ie updating the weights after each training case
-    def test(self, training_inputs, training_outputs):
-        self.feed_forward(training_inputs)
-        print("target", training_outputs, "prediction", self.output_layer.neurons[0].output)
+   
     def train(self, training_inputs, training_outputs):
         self.feed_forward(training_inputs)
 
@@ -330,7 +352,6 @@ class NeuralNetwork:
                 
                 # Δw = α * ∂Eⱼ/∂wᵢ
                 self.output_layer.neurons[o].weights[w_ho] -= self.LEARNING_RATE * pd_error_wrt_weight
-                
         # 4. Update hidden neuron weights
         for h in range(len(self.hidden_layer.neurons)):
             for w_ih in range(len(self.hidden_layer.neurons[h].weights)):
@@ -349,7 +370,22 @@ class NeuralNetwork:
             for o in range(len(training_outputs)):
                 total_error += self.output_layer.neurons[o].calculate_error(training_outputs[o])
         return total_error
-
+    
+    def test(self, test_sets):
+        for t in range(len(test_sets)):
+            training_inputs, training_outputs = test_sets[t]
+            self.feed_forward(training_inputs)
+            print("target", training_outputs, "prediction", self.output_layer.neurons[0].output)
+        f = open("demofile.txt", "a")
+        o_w = self.output_layer.neurons[0].weights
+        h_w = []
+        for i in range(self.num_hidden):
+            h_w.append(self.hidden_layer.neurons[i].weights)
+        f.write("********output**************")
+        f.write(''.join(str(e) for e in o_w))
+        f.write("********input**************")
+        f.write(''.join(str(e) for e in h_w))
+        
 '''
 init:
     (a) num_neurons
@@ -363,14 +399,16 @@ method:
 '''
 
 class NeuronLayer:
-    def __init__(self, num_neurons, hidden_0_output_1):
+    def __init__(self, num_neurons, hidden_0_output_1, bias):
         self.neurons = []
+        
+        self.bias = bias if bias else random.randint(-1,1) * random.random()
         if hidden_0_output_1 == 0:
             for i in range(num_neurons):
-                self.neurons.append(Hidden_Neuron())
+                self.neurons.append(Hidden_Neuron(self.bias))
         else:
             for i in range(num_neurons):
-                self.neurons.append(Output_Neuron())
+                self.neurons.append(Output_Neuron(self.bias))
 
     def inspect(self):
         print('Neurons:', len(self.neurons))
@@ -412,7 +450,8 @@ method:
     (c) calculate_pd_total_net_input_wrt_weight(self, index): ∂Netinput / ∂wi
 '''
 class Neuron:
-    def __init__(self):
+    def __init__(self, bias):
+        self.bias = bias
         self.weights = []
 
     def calculate_output(self, inputs):
@@ -424,7 +463,7 @@ class Neuron:
         total = 0
         for i in range(len(self.inputs)):
             total += self.inputs[i] * self.weights[i]
-        return total
+        return total + self.bias
 
     def calculate_pd_error_wrt_total_net_input(self, target_output):
         print("target", target_output, "output",self.output)
@@ -453,22 +492,38 @@ class Hidden_Neuron(Neuron):
     
 class Output_Neuron(Neuron):
     def squash(self, total_net_input):
-        return 1 / (1 + math.exp(-total_net_input))
-    
+        try:
+            return 1 / (1 + math.exp(-total_net_input))
+        except:
+            print("ERROR", total_net_input)
+
     def calculate_pd_total_net_input_wrt_input(self):
         return self.output * (1 - self.output)
 # main
-training_sets = get_trainning_set()
+
+# pos_train = get_descriptor("train_data/train_positive/crop001030c.bmp")
+# neg_train = get_descriptor("train_data/train_negative/00000091a_cut.bmp")
+# training_sets = [[pos_train,[1]], [neg_train,[0]]]
+
 # test_pos_des = get_descriptor("train_data/test_positive/crop001008b.bmp")
-# test_neg_des = get_descriptor("train_data/train_negative/00000090a_cut.bmp")
+# test_neg_des = get_descriptor("train_data/train_negative/01-03e_cut.bmp")
 # test_set1 = [[test_pos_des,[1]],[test_neg_des,[0]]]
-nn = NeuralNetwork(len(training_sets[0][0]), 100, len(training_sets[0][1]))
-for i in range(10000):
-    training_inputs, training_outputs = random.choice(training_sets)
-    nn.train(training_inputs, training_outputs)
+print
+
+training_sets = get_trainning_set()
+test_sets = get_test_set()
+nn = NeuralNetwork(len(training_sets[0][0]), 50, len(training_sets[0][1]))
+for i in range(1):
+    for j in range(20):
+        training_inputs, training_outputs = training_sets[j]
+        nn.train(training_inputs, training_outputs)
     print("***",i, round(nn.calculate_total_error(training_sets), 9))
-nn.test(test_set1[0][0],test_set1[0][1])
-nn.test(test_set1[1][0],test_set1[1][1])
+nn.test(test_sets)
+
+
+
+
+
 # gray_img = color2gray(img)
 # h = hog(gray_img, cell_size=(8, 8), cells_per_block=(2, 2), visualise=False, nbins=9, signed_orientation=False, normalise=True)
 # im2 = visualise_histogram(h, 8, 8, False)
